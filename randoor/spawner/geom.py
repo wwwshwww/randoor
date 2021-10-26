@@ -3,8 +3,6 @@ from sklearn.cluster import DBSCAN
 import numpy as np
 import trimesh
 
-from ..geometric_utils import get_square_horizon
-
 def sample_sprinkle(area_poly, count, sample_thresh):
     sample_area = area_poly.buffer(-1*(sample_thresh))
     xy = trimesh.path.polygons.sample(sample_area, count) # 2D

@@ -1,12 +1,13 @@
 import abc
-import quaternion
 import numpy as np
+from numpy.lib.arraysetops import isin
 import shapely
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, Point, MultiPolygon
+from shapely.ops import unary_union
 from multiprocessing import Pool, Array
 from contextlib import closing
 
-from .geometric_utils import vec_to_trans
+from .utils import vec_to_trans
 
 class RoomGeneratorFactory(object):
     def __init__(self):
@@ -18,30 +19,68 @@ class RoomGeneratorFactory(object):
 
 class RoomConfig(object):
     def __init__(self):
-        self.spawn_config = dict() # 'tag': {'positions': ~, 'orientations': ~}
-        self.point_group = dict()
-        self.polygon_group = dict()
-        self.config_tags = list()
+        # config[tag] = {collision: bool, positions: [(x,y,yaw)], polygons: [Polygon]}
+        self.config = dict()
+
+        self.conf_tag_collision = 'collision'
+        self.conf_tag_positions = 'positions'
+        self.conf_tag_polygons = 'polygons'
     
     @abc.abstractmethod
-    def prepare_model_manager(self):
+    def prepare(self):
         pass
 
-    def initialize_config(self, tag, count):
-        self.config_tags.append(tag)
-        self.spawn_config[tag] = dict(
-            positions=np.zeros([count,3]),
-            orientations=np.zeros([count,3])
-        )
+    def register_config(self, tag, count):
+        self.config[tag] = {
+            self.conf_tag_collision: False,
+            self.conf_tag_positions: np.zeros([count,3]),
+            self.conf_tag_polygons: np.empty([count], dtype=object),
+        }
+    
+    def set_collision(self, tag, collision):
+        self.config[tag][self.conf_tag_collision] = collision
+    
+    def set_positions(self, tag, positions):
+        self.config[tag][self.conf_tag_positions] = positions
 
-    def register_positions(self, tag, positions):
-        self.spawn_config[tag]['positions'] = positions
+    def set_polygons(self, tag, polygons):
+        self.config[tag][self.conf_tag_polygons] = polygons
 
-    def register_orientations(self, tag, orientations):
-        self.spawn_config[tag]['orientations'] = orientations
+    def set_config(self, tag, collision, positions, polygons):
+        self.config[tag][self.conf_tag_collision] = collision
+        self.config[tag][self.conf_tag_positions] = positions
+        self.config[tag][self.conf_tag_polygons] = polygons
+
+    def gather_polygon_from_config(self, conf_filter=None):
+        l = []
+        for tag, conf in self.config.items():
+            flag = (conf_filter is None) or (conf_filter(tag, conf))
+            if flag:
+                l.extend(conf[self.polygon_group])
+        return l
+
+    def get_space_poly(self, exterior_tag, poly_index=0, exclude_tags=None):
+        exterior = self.config[exterior_tag][self.conf_tag_polygons][poly_index]
+        assert len(exterior.interiors) == 1, 'exterior_tag should be perforated shape'
+        
+        conf_filter = lambda tag, conf: (conf[self.conf_tag_collision]) and (tag != exterior_tag)
+        polys = unary_union(self.gather_polygon_from_config(conf_filter))
+        if isinstance(polys, Polygon):
+            holes = [polys.exterior.coords]
+        else:
+            holes = [p.exterior.coords for p in polys]
+
+        return Polygon(exterior.exterior.coords, holes)
+
+    def get_collision_poly(self):
+        l = []
+        for conf in self.config.values():
+            if conf[self.conf_tag_collision]:
+                l.extend(conf[self.conf_tag_polygons])
+        return unary_union(l)
 
     @abc.abstractmethod
-    def get_freespace_poly(self, exterior_wall_tag, exclude_tags=[None]):
+    def get_freespace_poly(self):
         pass
 
     @abc.abstractmethod
@@ -65,7 +104,7 @@ class RoomConfig(object):
         xc = xx.flatten()
         yc = yy.flatten()
         
-        data = np.full([map_size*map_size], 0, dtype=np.uint8)
+        data = np.full([map_size*map_size], obs_color, dtype=np.uint8)
 
         xl = Array('d', xc)
         yl = Array('d', yc)
@@ -76,6 +115,6 @@ class RoomConfig(object):
             return corrected.contains(Point(xl[i], yl[i]))
 
         with closing(Pool()) as pool:
-            data[pool.map(mu, range(len(xc)))] = 255
+            data[pool.map(mu, range(len(xc)))] = pass_color
     
         return data

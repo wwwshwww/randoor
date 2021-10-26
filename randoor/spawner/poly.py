@@ -2,9 +2,9 @@ import numpy as np
 import trimesh
 
 from shapely.geometry import Polygon, MultiPoint, MultiPolygon
-from shapely.ops import unary_union
+from shapely.ops import unary_union, triangulate
 
-from ..geometric_utils import get_square_horizon
+from ..utils import get_square_horizon
 from . import geom
 
 def sprinkle_cube(area_poly, count, cube_size, interior_thresh=0):
@@ -30,3 +30,11 @@ def create_zones(polys, label):
 def get_clustered_zones(polys, thresh):
     label, _ = geom.get_cluster(polys, thresh)
     return create_zones(polys, label)
+
+def random_triangulation(n_points=10, x_min=-10, x_max=10, y_min=-10, y_max=10):
+    assert x_min < x_max, 'x_min must be lower than x_max'
+    assert y_min < y_max, 'y_min must be lower than y_max'
+    points = np.random.random([n_points, 2])
+    points[:,0] = points[:,0] * (x_max - x_min) + x_min
+    points[:,1] = points[:,1] * (y_max - y_min) + y_min
+    return unary_union(triangulate(MultiPoint(points)))
