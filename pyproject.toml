@@ -5,16 +5,33 @@ description = "Generate randomized indoor scene."
 authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
-python = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*"
-pyglet = "1.5.0"
-cython = "0.29.24"
+python = "^2.7 || >= 3.7"
+pyglet = [
+    {version = "1.5.0", python = "^2.7"}, 
+    {version = "^1.5.21", python = ">=3.7"}
+]
+cython = "^0.29.24"
 trimesh = "^3.9.34"
-scikit-learn = "0.20"
-numpy-quaternion = "2019.12.11.22.25.52"
+scikit-learn = [
+    {version = "0.20", python = "^2.7"}, 
+    {version = "^1.0.1", python = ">=3.7"}
+]
+numpy-quaternion = [
+    {version = "2019.12.11.22.25.52", python = "^2.7"}, 
+    {version = ">=2021.10.7.23.40.37", python = ">=3.7"}
+]
 Shapely = "^1.7.1"
 
 [tool.poetry.dev-dependencies]
-ipykernel = "4.8.2"
+ipykernel = [
+    {version = "4.8.2", python = "^2.7"}, 
+    {version = "^6.4.2", python = ">=3.7"}
+]
+
+matplotlib = [
+    {version = "2.2.5", python = "^2.7"},
+    {version = "^3.4.3", python = ">=3.7"}
+]
 
 [build-system]
 requires = ["poetry>=0.12"]
