@@ -1,7 +1,7 @@
 from shapely.geometry.polygon import Polygon
 import numpy as np
 
-from ..spawner.poly import random_triangulation, sprinkle_cube, simple_cube
+from ..spawner.poly import sprinkle_cube, simple_cube
 from .empty_room import EmptyRoomConfig, EmptyRoomGenerator
 
 class ObstacleRoomConfig(EmptyRoomConfig):
@@ -23,11 +23,11 @@ class ObstacleRoomConfig(EmptyRoomConfig):
 
 class ObstacleRoomGenerator(EmptyRoomGenerator):
     def __init__(self, 
+                 obstacle_count=10,
+                 obstacle_size=0.7,
                  room_length_max=9,
                  room_wall_thickness=0.05,
-                 wall_threshold=0.1,
-                 obstacle_count=10,
-                 obstacle_size=0.7):
+                 wall_threshold=0.1):
         
         super(ObstacleRoomGenerator, self).__init__(room_length_max, room_wall_thickness)
         self.wall_threshold = wall_threshold
