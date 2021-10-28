@@ -6,6 +6,7 @@ from shapely.geometry import Polygon, Point, MultiPolygon
 from shapely.ops import unary_union
 from multiprocessing import Pool, Array
 from contextlib import closing
+from copy import deepcopy
 
 from .utils import get_affine, vec_to_transform_matrix, radian_to_rotation_matrix
 from spawner.poly import get_moved_poly
@@ -13,6 +14,15 @@ from spawner.poly import get_moved_poly
 class RoomGeneratorFactory(object):
     def __init__(self):
         pass
+
+    @staticmethod
+    def merge_config(base_instance, target_instance):
+        # target_instance.config.update(base_instance.config)
+        # target_instance.polygons.update(target_instance.polygons)
+        for tag, config in base_instance.config.items():
+            target_instance.config[tag] = config
+        for tag, polys in base_instance.polygons.items():
+            target_instance.polygons[tag] = polys
 
     @abc.abstractmethod
     def generate_new(self):

@@ -1,13 +1,20 @@
 from shapely.geometry import Polygon, MultiPolygon
 from sklearn.cluster import DBSCAN
 import numpy as np
-import trimesh
+from trimesh.path.polygons import sample
 
 def sample_sprinkle(area_poly, count, sample_thresh):
     sample_area = area_poly.buffer(-1*(sample_thresh))
-    xy = trimesh.path.polygons.sample(sample_area, count) # 2D
+    xy = sample(sample_area, count) # 2D
     yaw = np.random.random(count)*np.pi*2
     return xy, yaw
+
+def sample_sure(area_poly, count, supplemental_range=0.2):
+    factor = count / supplemental_range
+    sampled = []
+    while not len(sampled) == count:
+        sampled = sample(area_poly, count, factor)
+    return sampled
 
 def get_cluster(polys, thresh):
     """get_cluster
@@ -41,12 +48,8 @@ def sample_from_faces(polys, count=1, face_size=0.2):
     
     """
     results = np.empty([len(polys),count,2])
-    factor = count / face_size
     for i, p in enumerate(polys):
         face = Polygon(p.buffer(face_size).exterior.coords, [p.exterior.coords])
-        sampled = []
-        while not len(sampled) == count:
-            sampled = trimesh.path.polygons.sample(face, count, factor)
-        results[i] = sampled
+        results[i] = sample_sure(face, count, face_size)
 
     return results

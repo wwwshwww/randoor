@@ -2,12 +2,19 @@ from shapely.geometry.polygon import Polygon
 from shapely.ops import unary_union
 import numpy as np
 
-from ..spawner.poly import sprinkle_cube, simple_cube, get_clustered_zones, get_moved_poly
+from ..spawner.poly import sprinkle_cube, simple_cube, get_clustered_zones
 from ..spawner.geom import sample_from_faces
 from .obstacle_room import ObstacleRoomConfig, ObstacleRoomGenerator
 
 class SimpleSearchRoomConfig(ObstacleRoomConfig):
-    def __init__(self, wall_shape, obstacle_shape, target_shape, obstacle_count, target_count, obstacle_hulls):
+    def __init__(self, 
+                 wall_shape, 
+                 obstacle_shape, 
+                 target_shape, 
+                 obstacle_count, 
+                 target_count, 
+                 obstacle_hulls):
+
         super(SimpleSearchRoomConfig, self).__init__(wall_shape, obstacle_shape, obstacle_count)
 
         self.target_shape = target_shape
@@ -30,8 +37,8 @@ class SimpleSearchRoomGenerator(ObstacleRoomGenerator):
     def __init__(self, 
                  obstacle_count=10,
                  obstacle_size=0.7,
-                 obstacle_zone_thresh=1.5,
                  target_size=0.2,
+                 obstacle_zone_thresh=1.5,
                  room_length_max=9,
                  room_wall_thickness=0.05,
                  wall_threshold=0.1):
@@ -60,10 +67,12 @@ class SimpleSearchRoomGenerator(ObstacleRoomGenerator):
         obstacle_pos[:,2] = obstacle_yaw
 
         zone_polys, zone_hull = get_clustered_zones(obstacle_polys, self.obstacle_zone_thresh)
+        target_placing_hull = [h.buffer(self.wall_threshold) for h in zone_hull]
         target_shape = simple_cube(self.target_size)
         target_collision = False
         target_pos = np.empty([len(zone_hull), 3])
-        target_pos[:,:2] = sample_from_faces(zone_hull, count=1, face_size=0.01)[:,0]
+        target_pos[:,:2] = sample_from_faces(target_placing_hull, count=1, face_size=0.01)[:,0]
+        target_pos[:,2] = 0.0
 
         room = SimpleSearchRoomConfig(
             wall_shape=wall_shape,
@@ -81,8 +90,5 @@ class SimpleSearchRoomGenerator(ObstacleRoomGenerator):
         room.set_polygons_auto(room.tag_wall)
         room.set_polygons_direct(room.tag_obstacle, obstacle_polys)
         room.set_polygons_auto(room.tag_target)
-
-        # target_polys = [get_moved_poly(target_shape, p[0], p[1], p[2]) for p in target_pos]
-        # room.set_polygons_direct(room.tag_target, target_polys)
 
         return room
