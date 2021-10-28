@@ -7,7 +7,7 @@ from shapely.ops import unary_union
 from multiprocessing import Pool, Array
 from contextlib import closing
 
-from .utils import vec_to_transform_matrix, radian_to_rotation_matrix
+from .utils import get_affine, vec_to_transform_matrix, radian_to_rotation_matrix
 from spawner.poly import get_moved_poly
 
 class RoomGeneratorFactory(object):
@@ -41,23 +41,23 @@ class RoomConfig(object):
         }
         self.polygons[tag] = np.empty([count], dtype=object)
     
-    def set_collision(self, tag, is_collision):
+    def set_config_collision(self, tag, is_collision):
         self.config[tag][self.conf_tag_collision] = is_collision
     
-    def set_positions(self, tag, x_y_yaw):
+    def set_config_positions(self, tag, x_y_yaw):
         self.config[tag][self.conf_tag_positions] = tuple(x_y_yaw)
 
-    def set_baseshape(self, tag, base_shape):
+    def set_config_baseshape(self, tag, base_shape):
         self.config[tag][self.conf_tag_baseshape] = base_shape
 
     def set_config_all(self, tag, is_collision, x_y_yaw, base_shape):
-        self.set_collision(tag, is_collision)
-        self.set_positions(tag, x_y_yaw)
-        self.set_baseshape(tag, base_shape)
+        self.set_config_collision(tag, is_collision)
+        self.set_config_positions(tag, x_y_yaw)
+        self.set_config_baseshape(tag, base_shape)
 
     def set_config(self, tag, is_collision, x_y_yaw):
-        self.set_collision(tag, is_collision)
-        self.set_positions(tag, x_y_yaw)
+        self.set_config_collision(tag, is_collision)
+        self.set_config_positions(tag, x_y_yaw)
 
     def set_polygons_direct(self, tag, polygons):
         self.polygons[tag] = polygons
@@ -77,19 +77,20 @@ class RoomConfig(object):
                 l.extend(self.polygons[tag])
         return l
 
-    def get_space_poly(self, exterior_tag, poly_index=0):
-        exte_pol = self.polygons[exterior_tag][poly_index]
+    def get_inner_poly(self, exterior_tag, holes=[], exterior_index=0):
+        exte_pol = self.polygons[exterior_tag][exterior_index]
         assert len(exte_pol.interiors) == 1, 'exterior_tag should be perforated shape'
         inte_pol = Polygon(exte_pol.interiors[0])
-        
+        if isinstance(holes, Polygon):
+            h = [holes.exterior.coords]
+        else:
+            h = [p.exterior.coords for p in holes]
+        return Polygon(inte_pol.exterior.coords, h)
+
+    def get_space_poly(self, exterior_tag, poly_index=0):
         conf_filter = lambda tag, conf: (conf[self.conf_tag_collision]) and (tag != exterior_tag)
         polys = unary_union(self.gather_polygon_from_config(conf_filter))
-        if isinstance(polys, Polygon):
-            holes = polys.exterior.coords
-        else:
-            holes = [p.exterior.coords for p in polys]
-
-        return Polygon(inte_pol.exterior.coords, holes)
+        return self.get_inner_poly(exterior_tag, polys, poly_index)
 
     def get_collision_poly(self):
         l = []

@@ -55,6 +55,7 @@ def get_affine(x, y, yaw):
     Notice: Caluclation with right-handed coordinate system.
     """
     rotate = radian_to_rotation_matrix(yaw)
-    trans = vec_to_transform_matrix([y,-x])
+    # trans = vec_to_transform_matrix([y,-x])
+    trans = vec_to_transform_matrix([x,y])
     affine = np.dot(trans, rotate)
     return affine

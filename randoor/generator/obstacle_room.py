@@ -18,9 +18,6 @@ class ObstacleRoomConfig(EmptyRoomConfig):
         self.register(self.tag_wall, self.wall_shape, 1)
         self.register(self.tag_obstacle, self.obstacle_shape, self.obstacle_count)
 
-    def get_freespace_poly(self):
-        return self.get_space_poly(self.tag_wall)
-
 class ObstacleRoomGenerator(EmptyRoomGenerator):
     def __init__(self, 
                  obstacle_count=10,
