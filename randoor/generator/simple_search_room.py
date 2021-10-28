@@ -34,6 +34,9 @@ class SimpleSearchRoomConfig(ObstacleRoomConfig):
         return self.get_inner_poly(self.tag_wall, unary_union(self.obstacle_hulls))
 
 class SimpleSearchRoomGenerator(ObstacleRoomGenerator):
+    target_each_count = 1
+    target_sample_face = 0.01
+
     def __init__(self, 
                  obstacle_count=10,
                  obstacle_size=0.7,
@@ -49,6 +52,7 @@ class SimpleSearchRoomGenerator(ObstacleRoomGenerator):
         self.target_size = target_size
 
     def generate_new(self):
+        ## ------------------------- same super's ------------------------------------
         wall_shape = self._create_wall_poly()
         wall_collision = True
         wall_pos = np.array([(0,0,0)])
@@ -65,14 +69,12 @@ class SimpleSearchRoomGenerator(ObstacleRoomGenerator):
         obstacle_pos = np.empty([len(obstacle_xy), 3])
         obstacle_pos[:,:2] = obstacle_xy
         obstacle_pos[:,2] = obstacle_yaw
+        ## ---------------------------------------------------------------------------
 
         zone_polys, zone_hull = get_clustered_zones(obstacle_polys, self.obstacle_zone_thresh)
-        target_placing_hull = [h.buffer(self.wall_threshold) for h in zone_hull]
         target_shape = simple_cube(self.target_size)
         target_collision = False
-        target_pos = np.empty([len(zone_hull), 3])
-        target_pos[:,:2] = sample_from_faces(target_placing_hull, count=1, face_size=0.01)[:,0]
-        target_pos[:,2] = 0.0
+        target_pos = self._sample_target_pos(zone_hull)
 
         room = SimpleSearchRoomConfig(
             wall_shape=wall_shape,
@@ -92,3 +94,19 @@ class SimpleSearchRoomGenerator(ObstacleRoomGenerator):
         room.set_polygons_auto(room.tag_target)
 
         return room
+
+    def _sample_target_pos(self, hulls):
+        target_placing_hull = [h.buffer(self.wall_threshold) for h in hulls]
+        target_pos = np.empty([len(hulls), 3])
+        target_pos[:,:2] = sample_from_faces(
+            polys=target_placing_hull, 
+            count=self.target_each_count, 
+            face_size=self.target_sample_face
+        )[:,0]
+        target_pos[:,2] = 0.0
+        return target_pos
+    
+    def reposition_target(self, room_conf):
+        target_pos = self._sample_target_pos(room_conf.obstacle_hulls)
+        room_conf.set_config_positions(room_conf.tag_target, target_pos)
+        room_conf.set_polygons_auto(room_conf.tag_target)

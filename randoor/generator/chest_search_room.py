@@ -17,7 +17,7 @@ class ChestSearchRoomConfig(SimpleSearchRoomConfig):
                  target_count, 
                  key_count, 
                  obstacle_hulls, 
-                 key_placing_area=None):
+                 key_placing_area):
 
         super(ChestSearchRoomConfig, self).__init__(wall_shape, obstacle_shape, target_shape, obstacle_count, target_count, obstacle_hulls)
 
@@ -40,6 +40,8 @@ class ChestSearchRoomConfig(SimpleSearchRoomConfig):
         return self.get_inner_poly(self.tag_wall, unary_union(self.obstacle_hulls))
 
 class ChestSearchRoomGenerator(SimpleSearchRoomGenerator):
+    key_each_count = 1
+
     def __init__(self, 
                  obstacle_count=10,
                  obstacle_size=0.7,
@@ -65,11 +67,10 @@ class ChestSearchRoomGenerator(SimpleSearchRoomGenerator):
         hull_buff = self.distance_key_placing + self.range_key_placing
         path_area = freezone.buffer(-self.distance_key_placing)
         key_placing_area = [path_area.intersection(h.buffer(hull_buff)) for h in zone_hull]
+
         key_shape = simple_cube(self.key_size)
         key_collision = False
-        key_pos = np.empty([len(zone_hull), 3])
-        key_pos[:,:2] = [sample_sure(a, 1, self.range_key_placing)[0] for a in key_placing_area]
-        key_pos[:,2] = 0.0
+        key_pos = self._sample_key_pos(key_placing_area)
 
         room = ChestSearchRoomConfig(
             wall_shape=pre.wall_shape,
@@ -89,3 +90,14 @@ class ChestSearchRoomGenerator(SimpleSearchRoomGenerator):
         room.set_polygons_auto(room.tag_key)
 
         return room
+
+    def _sample_key_pos(self, key_placing_areas):
+        key_pos = np.empty([len(key_placing_areas), 3])
+        key_pos[:,:2] = [sample_sure(a, self.key_each_count, self.range_key_placing)[0] for a in key_placing_areas]
+        key_pos[:,2] = 0.0
+        return key_pos
+
+    def reposition_target(self, room_conf):
+        key_pos = self._sample_key_pos(room_conf.key_placing_area)
+        room_conf.set_config_positions(room_conf.tag_key, key_pos)
+        room_conf.set_polygons_auto(room_conf.tag_key)
