@@ -52,33 +52,16 @@ class SimpleSearchRoomGenerator(ObstacleRoomGenerator):
         self.target_size = target_size
 
     def generate_new(self):
-        ## ------------------------- same super's ------------------------------------
-        wall_shape = self._create_wall_poly()
-        wall_collision = True
-        wall_pos = np.array([(0,0,0)])
+        pre = super(SimpleSearchRoomGenerator, self).generate_new()
 
-        wall_interior = Polygon(wall_shape.interiors[0])
-        obstacle_xy, obstacle_yaw, obstacle_polys = sprinkle_cube(
-            area_poly=wall_interior, 
-            count=self.obstacle_count, 
-            cube_size=self.obstacle_size,
-            interior_thresh=self.wall_threshold
-        )
-        obstacle_shape = simple_cube(self.obstacle_size)
-        obstacle_collision = True
-        obstacle_pos = np.empty([len(obstacle_xy), 3])
-        obstacle_pos[:,:2] = obstacle_xy
-        obstacle_pos[:,2] = obstacle_yaw
-        ## ---------------------------------------------------------------------------
-
-        zone_polys, zone_hull = get_clustered_zones(obstacle_polys, self.obstacle_zone_thresh)
+        zone_polys, zone_hull = get_clustered_zones(pre.get_polygons(pre.tag_obstacle), self.obstacle_zone_thresh)
         target_shape = simple_cube(self.target_size)
         target_collision = False
         target_pos = self._sample_target_pos(zone_hull)
 
         room = SimpleSearchRoomConfig(
-            wall_shape=wall_shape,
-            obstacle_shape=obstacle_shape,
+            wall_shape=pre.wall_shape,
+            obstacle_shape=pre.obstacle_shape,
             target_shape=target_shape,
             obstacle_count=self.obstacle_count,
             target_count=len(target_pos),
@@ -86,11 +69,8 @@ class SimpleSearchRoomGenerator(ObstacleRoomGenerator):
         )
 
         room.prepare()
-        room.set_config(room.tag_wall, wall_collision, wall_pos)
-        room.set_config(room.tag_obstacle, obstacle_collision, obstacle_pos)
+        self.merge_config(pre, room)
         room.set_config(room.tag_target, target_collision, target_pos)
-        room.set_polygons_auto(room.tag_wall)
-        room.set_polygons_direct(room.tag_obstacle, obstacle_polys)
         room.set_polygons_auto(room.tag_target)
 
         return room

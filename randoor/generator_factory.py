@@ -105,8 +105,10 @@ class RoomConfig(object):
         inte_pol = Polygon(exte_pol.interiors[0])
         if isinstance(holes, Polygon):
             h = [holes.exterior.coords]
-        else:
+        elif isinstance(holes, MultiPolygon):
             h = [p.exterior.coords for p in holes.geoms]
+        else:
+            h = [p.exterior.coords for p in holes]
         return Polygon(inte_pol.exterior.coords, h)
 
     def get_space_poly(self, exterior_tag, poly_index=0):
