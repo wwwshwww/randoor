@@ -9,7 +9,7 @@ from contextlib import closing
 from copy import deepcopy
 
 from .utils import get_affine, vec_to_transform_matrix, radian_to_rotation_matrix
-from spawner.poly import get_moved_poly
+from .spawner.poly import get_moved_poly
 
 class RoomGeneratorFactory(object):
     def __init__(self):
