@@ -79,6 +79,18 @@ class RoomConfig(object):
         polys = [get_moved_poly(base_shape, p[0], p[1], p[2]) for p in x_y_yaw]
         self.set_polygons_direct(tag, polys)
 
+    def get_collision(self, component_tag):
+        return self.config[component_tag][self.conf_tag_collision]
+
+    def get_positions(self, component_tag):
+        return self.config[component_tag][self.conf_tag_positions]
+
+    def get_baseshape(self, component_tag):
+        return self.config[component_tag][self.conf_tag_baseshape]
+
+    def get_polygons(self, component_tag):
+        return self.polygons[component_tag]
+
     def gather_polygon_from_config(self, conf_filter=None):
         l = []
         for tag, conf in self.config.items():
@@ -94,7 +106,7 @@ class RoomConfig(object):
         if isinstance(holes, Polygon):
             h = [holes.exterior.coords]
         else:
-            h = [p.exterior.coords for p in holes]
+            h = [p.exterior.coords for p in holes.geoms]
         return Polygon(inte_pol.exterior.coords, h)
 
     def get_space_poly(self, exterior_tag, poly_index=0):

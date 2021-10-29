@@ -97,7 +97,7 @@ class ChestSearchRoomGenerator(SimpleSearchRoomGenerator):
         key_pos[:,2] = 0.0
         return key_pos
 
-    def reposition_target(self, room_conf):
+    def reposition_key(self, room_conf):
         key_pos = self._sample_key_pos(room_conf.key_placing_area)
         room_conf.set_config_positions(room_conf.tag_key, key_pos)
         room_conf.set_polygons_auto(room_conf.tag_key)
