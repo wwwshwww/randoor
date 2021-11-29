@@ -6,10 +6,10 @@ from shapely.geometry import Polygon, Point, MultiPolygon
 from shapely.ops import unary_union
 from multiprocessing import Pool, Array
 from contextlib import closing
-from copy import deepcopy
 
-from .utils import get_affine, vec_to_transform_matrix, radian_to_rotation_matrix
-from .spawner.poly import get_moved_poly
+from .utils import vec_to_transform_matrix, radian_to_rotation_matrix
+from .spawner.poly import get_moved_poly_tf_rt
+from randoor.spawner import poly
 
 class RoomGeneratorFactory(object):
     def __init__(self):
@@ -76,7 +76,7 @@ class RoomConfig(object):
         assert tag in self.config.keys(), 'not registered tag'
         base_shape = self.config[tag][self.conf_tag_baseshape]
         x_y_yaw = self.config[tag][self.conf_tag_positions]
-        polys = [get_moved_poly(base_shape, p[0], p[1], p[2]) for p in x_y_yaw]
+        polys = [get_moved_poly_tf_rt(base_shape, p[0], p[1], p[2]) for p in x_y_yaw]
         self.set_polygons_direct(tag, polys)
 
     def get_collision(self, component_tag):
@@ -117,26 +117,24 @@ class RoomConfig(object):
         return self.get_inner_poly(exterior_tag, polys, poly_index)
 
     def get_collision_poly(self):
-        l = []
-        for tag, conf in self.config.items():
-            if conf[self.conf_tag_collision]:
-                l.extend(self.polygons[tag])
-        return unary_union(l)
+        conf_filter = lambda tag, conf: conf[self.conf_tag_collision]
+        polys = self.gather_polygon_from_config(conf_filter)
+        return unary_union(polys)
 
     @abc.abstractmethod
     def get_freespace_poly(self):
         pass
 
     @abc.abstractmethod
-    def get_occupancy_grid(self, freespace_poly, origin_pos=(0,0), origin_ori=0, resolution=0.050, map_size=512, pass_color=255, obs_color=0):
+    def get_occupancy_grid(self, space_poly, origin_pos=(0,0), origin_ori=0, resolution=0.050, map_size=512, pass_color=255, obs_color=0):
         if origin_pos == (0,0) and origin_ori == 0:
-            corrected = freespace_poly
+            corrected = space_poly
         else:
-            mat1 = vec_to_transform_matrix(origin_pos)
+            mat1 = vec_to_transform_matrix((-origin_pos[1], -origin_pos[0]))
             mat2 = radian_to_rotation_matrix(origin_ori)
             af = np.dot(mat2,mat1)
-            print(af)
-            corrected = shapely.affinity.affine_transform(freespace_poly, [af[0,0],af[0,1],af[1,0],af[1,1],af[0,2],af[1,2]])
+            # print(af)
+            corrected = shapely.affinity.affine_transform(space_poly, [af[0,0],af[0,1],af[1,0],af[1,1],af[0,2],af[1,2]])
     
         half_length = (map_size * resolution) / 2
         lin = np.linspace(-half_length, half_length, map_size)

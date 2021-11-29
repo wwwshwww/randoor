@@ -1,0 +1,5 @@
+.venv
+*lock
+__pycache__/
+build
+dist

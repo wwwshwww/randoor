@@ -4,7 +4,7 @@ from shapely.affinity import affine_transform
 from shapely.geometry import Polygon, MultiPoint, MultiPolygon
 from shapely.ops import unary_union, triangulate
 
-from ..utils import get_square_horizon, get_affine
+from ..utils import get_affine_rt_tf, get_affine_tf_rt, get_square_horizon
 from . import geom
 
 def simple_cube(cube_size, xy=(0,0), yaw=0):
@@ -42,6 +42,10 @@ def random_triangulation(n_points=10, x_min=-10, x_max=10, y_min=-10, y_max=10):
     points[:,1] = points[:,1] * (y_max - y_min) + y_min
     return unary_union(triangulate(MultiPoint(points)))
 
-def get_moved_poly(base_geom, x, y, yaw):
-    aff = get_affine(x,y,yaw)
+def get_moved_poly_tf_rt(base_geom, x, y, yaw):
+    aff = get_affine_tf_rt(x,y,yaw)
+    return affine_transform(base_geom, [aff[0,0], aff[0,1], aff[1,0], aff[1,1], aff[0,2], aff[1,2]])
+
+def get_moved_poly_rt_tf(base_geom, x, y, yaw):
+    aff = get_affine_rt_tf(x,y,yaw)
     return affine_transform(base_geom, [aff[0,0], aff[0,1], aff[1,0], aff[1,1], aff[0,2], aff[1,2]])

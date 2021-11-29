@@ -50,12 +50,22 @@ def transform_2d(target_x, target_y, target_yaw, origin_x, origin_y, origin_yaw)
     
     return transed_xy[0], transed_xy[1], convert_180(target_yaw - origin_yaw)
 
-def get_affine(x, y, yaw):
+def get_affine_tf_rt(x, y, yaw):
     """
-    Notice: Caluclation with right-handed coordinate system.
+    Notice: Calculation with transform -> rotate
     """
     rotate = radian_to_rotation_matrix(yaw)
     # trans = vec_to_transform_matrix([y,-x])
     trans = vec_to_transform_matrix([x,y])
     affine = np.dot(trans, rotate)
+    return affine
+
+def get_affine_rt_tf(x, y, yaw):
+    """
+    Notice: rotate -> transform
+    """
+    rotate = radian_to_rotation_matrix(yaw)
+    # trans = vec_to_transform_matrix([y,-x])
+    trans = vec_to_transform_matrix([x,y])
+    affine = np.dot(rotate, trans)
     return affine
