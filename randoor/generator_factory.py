@@ -8,7 +8,7 @@ from multiprocessing import Pool, Array
 from contextlib import closing
 
 from .utils import vec_to_transform_matrix, radian_to_rotation_matrix
-from .spawner.poly import get_moved_poly_tf_rt
+from .spawner.poly import get_moved_poly_rt_tf, get_moved_poly_tf_rt, get_affine_rt_tf
 from randoor.spawner import poly
 
 class RoomGeneratorFactory(object):
@@ -126,15 +126,11 @@ class RoomConfig(object):
         pass
 
     @abc.abstractmethod
-    def get_occupancy_grid(self, space_poly, origin_pos=(0,0), origin_ori=0, resolution=0.050, map_size=512, pass_color=255, obs_color=0):
-        if origin_pos == (0,0) and origin_ori == 0:
+    def get_occupancy_grid(self, space_poly, origin_pos=(0,0), origin_ori=0, resolution=0.05, map_size=512, pass_color=255, obs_color=0):
+        if (origin_pos[0] == 0) and (origin_pos[1] == 0) and (origin_ori == 0):
             corrected = space_poly
         else:
-            mat1 = vec_to_transform_matrix((-origin_pos[1], -origin_pos[0]))
-            mat2 = radian_to_rotation_matrix(origin_ori)
-            af = np.dot(mat2,mat1)
-            # print(af)
-            corrected = shapely.affinity.affine_transform(space_poly, [af[0,0],af[0,1],af[1,0],af[1,1],af[0,2],af[1,2]])
+            corrected = get_moved_poly_rt_tf(space_poly, -origin_pos[0], -origin_pos[1], -origin_ori)
     
         half_length = (map_size * resolution) / 2
         lin = np.linspace(-half_length, half_length, map_size)
