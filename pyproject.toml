@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "randoor"
-version = "0.1.4.1"
+version = "0.1.4.2"
 description = "Generate randomized indoor scene."
 authors = ["Reona Sato <www.shinderu.www@gmail.com>"]
 repository = "https://github.com/wwwshwww/randoor"
@@ -21,7 +21,7 @@ numpy-quaternion = [
     {version = "2019.12.11.22.25.52", python = "^2.7"}, 
     {version = "2021.10.7.23.40.37", python = ">=3.7"}
 ]
-Shapely = "^1.7.1"
+Shapely = "^1.7.0"
 
 [tool.poetry.dev-dependencies]
 ipykernel = [
