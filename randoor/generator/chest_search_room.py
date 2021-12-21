@@ -30,6 +30,9 @@ class ChestSearchRoomConfig(SimpleSearchRoomConfig):
         self.tag_target = 'target'
         self.tag_key = 'key'
 
+    def tweak_key_collision(self, index, is_col=True):
+        self.tweak_collision(self.tag_key, index, is_col)
+
     def prepare(self):
         self.register(self.tag_wall, self.wall_shape, 1)
         self.register(self.tag_obstacle, self.obstacle_shape, self.obstacle_count)
@@ -69,8 +72,8 @@ class ChestSearchRoomGenerator(SimpleSearchRoomGenerator):
         key_placing_area = [path_area.intersection(h.buffer(hull_buff)) for h in zone_hull]
 
         key_shape = simple_cube(self.key_size)
-        key_collision = False
         key_pos = self._sample_key_pos(key_placing_area)
+        key_collision = [False for _ in range(len(key_pos))]
 
         room = ChestSearchRoomConfig(
             wall_shape=pre.wall_shape,

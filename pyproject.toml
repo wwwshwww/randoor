@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "randoor"
-version = "0.1.4.4"
+version = "0.1.4.5"
 description = "Generate randomized indoor scene."
 authors = ["Reona Sato <www.shinderu.www@gmail.com>"]
 repository = "https://github.com/wwwshwww/randoor"

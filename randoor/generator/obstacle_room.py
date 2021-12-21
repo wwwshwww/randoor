@@ -33,7 +33,7 @@ class ObstacleRoomGenerator(EmptyRoomGenerator):
 
     def generate_new(self):
         wall_shape = self._create_wall_poly()
-        wall_collision = True
+        wall_collision = [True]
         wall_pos = np.array([(0,0,0)])
 
         wall_interior = Polygon(wall_shape.interiors[0])
@@ -44,7 +44,7 @@ class ObstacleRoomGenerator(EmptyRoomGenerator):
             interior_thresh=self.wall_threshold
         )
         obstacle_shape = simple_cube(self.obstacle_size)
-        obstacle_collision = True
+        obstacle_collision = [True for _ in range(self.obstacle_count)]
         obstacle_pos = np.empty([len(xy), 3])
         obstacle_pos[:,:2] = xy
         obstacle_pos[:,2] = yaw

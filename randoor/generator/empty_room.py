@@ -39,7 +39,7 @@ class EmptyRoomGenerator(RoomGeneratorFactory):
 
     def generate_new(self):
         wall_shape = self._create_wall_poly()
-        wall_collision = True
+        wall_collision = [True]
         wall_pos = [(0,0,0)]
 
         emp_room = EmptyRoomConfig(

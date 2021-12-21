@@ -25,6 +25,9 @@ class SimpleSearchRoomConfig(ObstacleRoomConfig):
         self.tag_obstacle = 'obstacle'
         self.tag_target = 'target'
 
+    def tweak_target_collision(self, index, is_col=True):
+        self.tweak_collision(self.tag_target, index, is_col)
+
     def prepare(self):
         self.register(self.tag_wall, self.wall_shape, 1)
         self.register(self.tag_obstacle, self.obstacle_shape, self.obstacle_count)
@@ -56,8 +59,9 @@ class SimpleSearchRoomGenerator(ObstacleRoomGenerator):
 
         zone_polys, zone_hull = get_clustered_zones(pre.get_polygons(pre.tag_obstacle), self.obstacle_zone_thresh)
         target_shape = simple_cube(self.target_size)
-        target_collision = False
         target_pos = self._sample_target_pos(zone_hull)
+        target_collision = [False for _ in range(len(target_pos))]
+        
 
         room = SimpleSearchRoomConfig(
             wall_shape=pre.wall_shape,

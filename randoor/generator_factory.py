@@ -30,12 +30,12 @@ class RoomGeneratorFactory(object):
 
 class RoomConfig(object):
     def __init__(self):
-        # config[tag] = {collision: bool, baseshape: Polygon, positions: [(x,y,yaw)]}
+        # config[tag] = {baseshape: Polygon, collisions: [bool], positions: [(x,y,yaw)]}
         self.config = dict()
         # polygons[tag] = [Polygon]
         self.polygons = dict()
 
-        self.conf_tag_collision = 'collision'
+        self.conf_tag_collisions = 'collisions'
         self.conf_tag_positions = 'positions'
         self.conf_tag_baseshape = 'baseshape'
     
@@ -45,28 +45,31 @@ class RoomConfig(object):
 
     def register(self, tag, base_shape, count):
         self.config[tag] = {
-            self.conf_tag_collision: False,
+            self.conf_tag_collisions: np.ones([count], dtype=np.bool8),
             self.conf_tag_positions: np.zeros([count,3]),
             self.conf_tag_baseshape: base_shape,
         }
         self.polygons[tag] = np.empty([count], dtype=object)
+
+    def tweak_collision(self, tag, index, val=True):
+        self.config[tag][self.conf_tag_collisions][index] = val
     
-    def set_config_collision(self, tag, is_collision):
-        self.config[tag][self.conf_tag_collision] = is_collision
+    def set_config_collisions(self, tag, is_collision):
+        self.config[tag][self.conf_tag_collisions] = np.array(is_collision, dtype=np.bool8)
     
     def set_config_positions(self, tag, x_y_yaw):
-        self.config[tag][self.conf_tag_positions] = tuple(x_y_yaw)
+        self.config[tag][self.conf_tag_positions] = np.array(x_y_yaw)
 
     def set_config_baseshape(self, tag, base_shape):
         self.config[tag][self.conf_tag_baseshape] = base_shape
 
     def set_config_all(self, tag, is_collision, x_y_yaw, base_shape):
-        self.set_config_collision(tag, is_collision)
+        self.set_config_collisions(tag, is_collision)
         self.set_config_positions(tag, x_y_yaw)
         self.set_config_baseshape(tag, base_shape)
 
     def set_config(self, tag, is_collision, x_y_yaw):
-        self.set_config_collision(tag, is_collision)
+        self.set_config_collisions(tag, is_collision)
         self.set_config_positions(tag, x_y_yaw)
 
     def set_polygons_direct(self, tag, polygons):
@@ -79,8 +82,8 @@ class RoomConfig(object):
         polys = [get_moved_poly_tf_rt(base_shape, p[0], p[1], p[2]) for p in x_y_yaw]
         self.set_polygons_direct(tag, polys)
 
-    def get_collision(self, component_tag):
-        return self.config[component_tag][self.conf_tag_collision]
+    def get_collisions(self, component_tag):
+        return self.config[component_tag][self.conf_tag_collisions]
 
     def get_positions(self, component_tag):
         return self.config[component_tag][self.conf_tag_positions]
@@ -92,11 +95,16 @@ class RoomConfig(object):
         return self.polygons[component_tag]
 
     def gather_polygon_from_config(self, conf_filter=None):
+        '''
+        note: conf_filter require 3 args of [tag, config, index].
+        '''
         l = []
-        for tag, conf in self.config.items():
-            flag = (conf_filter is None) or (conf_filter(tag, conf))
-            if flag:
+        for tag, config in self.config.items():
+            if conf_filter is None:
                 l.extend(self.polygons[tag])
+            else:
+                polys = [p for i,p in enumerate(self.polygons[tag]) if conf_filter(tag, config, i)]
+                l.extend(polys)
         return l
 
     def get_inner_poly(self, exterior_tag, holes=[], exterior_index=0):
@@ -112,12 +120,12 @@ class RoomConfig(object):
         return Polygon(inte_pol.exterior.coords, h)
 
     def get_space_poly(self, exterior_tag, poly_index=0):
-        conf_filter = lambda tag, conf: (conf[self.conf_tag_collision]) and (tag != exterior_tag)
+        conf_filter = lambda tag, conf, i: (conf[self.conf_tag_collisions][i]) and (tag != exterior_tag)
         polys = unary_union(self.gather_polygon_from_config(conf_filter))
         return self.get_inner_poly(exterior_tag, polys, poly_index)
 
     def get_collision_poly(self):
-        conf_filter = lambda tag, conf: conf[self.conf_tag_collision]
+        conf_filter = lambda tag, conf, i: conf[self.conf_tag_collisions][i]
         polys = self.gather_polygon_from_config(conf_filter)
         return unary_union(polys)
 
