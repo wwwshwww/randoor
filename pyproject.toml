@@ -1,15 +1,15 @@
 [tool.poetry]
 name = "randoor"
-version = "0.1.4.3"
+version = "0.1.4.4"
 description = "Generate randomized indoor scene."
 authors = ["Reona Sato <www.shinderu.www@gmail.com>"]
 repository = "https://github.com/wwwshwww/randoor"
 
 [tool.poetry.dependencies]
-python = "^2.7 || >= 3.7,<3.11"
+python = "^2.7 || >= 3.7"
 numpy = [
     {version = "1.16.6", python = "^2.7"}, 
-    {version = "^1.21.4", python = ">=3.7"}
+    {version = "^1.20", python = ">=3.7"}
 ]
 trimesh = "^3.9.34"
 scikit-learn = [
