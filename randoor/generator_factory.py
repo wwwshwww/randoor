@@ -129,6 +129,9 @@ class RoomConfig(object):
         polys = self.gather_polygon_from_config(conf_filter)
         return unary_union(polys)
 
+    def get_collision_poly_focus(self, tag):
+        return [self.polygons[tag][i] for i in range(len(self.polygons[tag])) if self.config[tag][self.conf_tag_collisions][i]]
+
     @abc.abstractmethod
     def get_freespace_poly(self):
         pass

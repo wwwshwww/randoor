@@ -40,7 +40,10 @@ class ChestSearchRoomConfig(SimpleSearchRoomConfig):
         self.register(self.tag_key, self.key_shape, self.key_count)
 
     def get_freezone_poly(self):
-        return self.get_inner_poly(self.tag_wall, unary_union(self.obstacle_hulls))
+        col_list = self.get_collision_poly_focus(self.tag_target)
+        col_list.extend(self.get_collision_poly_focus(self.tag_key))
+        col_list.extend(self.obstacle_hulls)
+        return self.get_inner_poly(self.tag_wall, unary_union(col_list))
 
 class ChestSearchRoomGenerator(SimpleSearchRoomGenerator):
     key_each_count = 1
